@@ -5,8 +5,11 @@ import { ref, computed } from "vue";
 
 let count = ref(0);
 let tasks = ref([]);
+let newRow = ref({});
 let taskCompleted = ref([]);
 let task = ref('');
+let taskEditValue = ref('');
+let editIndex = ref(-1);
 
 
 const addTasks = () => {
@@ -89,7 +92,7 @@ const existTask = computed(() => {
 
   <div>
     <div class="mt-10 w-1/2 mx-auto">
-      <label for="large-input" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Into task</label>
+      <!-- <label for="large-input" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Into task</label>
       <input type="text" id="large-input" v-model="task"
         class="block w-full p-4 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 sm:text-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700
          dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
@@ -98,40 +101,79 @@ const existTask = computed(() => {
           class="focus:outline-none text-white bg-green-500 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Agregar</button>
         <button type="button" @click="resetTasks"
           class="focus:outline-none text-white bg-purple-700 hover:bg-purple-800 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 mb-2 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-900">Limpiar</button>
-      </div>
+      </div> -->
 
-      <div class="flex gap-20 mt-10">
-        <div class="border rounded-md p-4 border-blue-400 w-1/2">
-          <p class="text-2xl mb-2">Tareas Por hacer</p>
-          <ul v-for="task in tasks" class="max-w-md space-y-1 text-gray-500 list-inside">
-            <li class="flex items-center text-black font-semibold">
-              <button data-modal-target="default-modal" data-modal-toggle="default-modal">{{ task }}</button>
-              <svg
-                class="w-3.5 h-3.5 me-2 text-green-500 ml-2 dark:text-green-400 flex-shrink-0 transition hover:scale-150"
-                aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"
-                @click="addCompletedTasks(task)">
-                <path
-                  d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
-              </svg>
-            </li>
-          </ul>
-        </div>
-
-        <div class="border rounded-md p-4 border-blue-400 w-1/2">
-          <p class="text-2xl mb-2">Tareas Completadas</p>
-          <ul v-for="taskc in taskCompleted" class="max-w-md space-y-1 text-gray-500 list-inside">
-            <li class="flex items-center text-black font-semibold">
-              <span class="line-through"> {{ taskc }} </span>
-              <div class="rounded-full bg-red-500 ml-2">
-                <span class="text-red-800 p-2" @click="deleteCompletedTasks(taskc)">x</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-
+      <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+          <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+              <th scope="col" class="px-6 py-3">
+                Task
+              </th>
+              <th scope="col" align="end" class="px-6 py-3">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+              <td class="font-medium text-gray-900 whitespace-nowrap dark:text-white pa-0">
+                <input placeholder="Describe yoiur task..." v-model="task" class="outline-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" style="box-sizing: border-box"/>
+              </td>
+              <td class="pr-4">
+                <div class="inline-flex w-full justify-end rounded-md shadow-sm" role="group">
+                  <button :disabled="task == ''" @click="task = ''" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    CLEAR
+                  </button>
+                  <button :disabled="task == ''" @click="editIndex = -1;tasks.push(task); task = ''" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    ADD
+                  </button>
+                </div>
+              </td>
+            </tr>            
+            <tr v-for="taskValue, i in tasks" class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+              <td class="font-medium text-gray-900 whitespace-nowrap dark:text-white pa-0">
+                <input v-if="i == editIndex" placeholder="Describe yoiur task..." v-model="taskEditValue" class="outline-none bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" style="box-sizing: border-box"/>
+                <div class="ml-3 py-3" v-else>{{taskValue}}</div>               
+              </td>
+              <td class="pr-4">
+                <div class="inline-flex w-full justify-end rounded-md shadow-sm" role="group">
+                  <button v-if="i != editIndex" :disabled="i == editIndex" @click="editIndex = i; taskEditValue = taskValue" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    EDIT
+                  </button>
+                  <button v-else @click="tasks[editIndex] = taskEditValue; editIndex = -1" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    UPDATE
+                  </button>
+                  <button @click="tasks.splice(tasks.indexOf(taskValue), 1)" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    DELETE
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <!-- <tr v-for="taskValue, i in tasks"
+              class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+              <td class="px-6 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <input v-if="i == editIndex" placeholder="Describe yoiur task..." v-model="taskEditValue" class="outline-none bg-transparent border-none text-gray-900 text-sm block w-full" style="box-sizing: border-box"/>
+                <span v-else>{{taskValue}}</span>               
+              </td>
+              <td class="pr-4">
+                <div class="inline-flex w-full justify-end rounded-md shadow-sm ma-0" role="group">
+                  <button v-if="i != editIndex" :disabled="i == editIndex" @click="editIndex = i; taskEditValue = taskValue" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    EDIT
+                  </button>
+                  <button v-else @click="tasks[editIndex] = taskEditValue; editIndex = -1" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    UPDATE
+                  </button>
+                  <button @click="tasks.splice(tasks.indexOf(taskValue), 1)" type="button" class="px-4 py-2 text-xs font-medium text-gray-900 bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-blue-500 dark:focus:text-white">
+                    DELETE
+                  </button>
+                </div>                
+              </td>
+            </tr> -->
+          </tbody>
+        </table>
       </div>
     </div>
-
     <!-- Main modal -->
     <div id="default-modal" tabindex="-1" aria-hidden="true"
       class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full">
@@ -172,6 +214,4 @@ const existTask = computed(() => {
       </div>
     </div>
   </div>
-
-  
 </template>
